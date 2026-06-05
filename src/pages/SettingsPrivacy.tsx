@@ -1,16 +1,53 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ChevronRight } from "lucide-react";
-import { ME } from "../lib/mock";
+import { useAuth } from "../hooks/useAuth";
+import { useCouple } from "../hooks/useCouple";
+import { supabase } from "../lib/supabase";
+import { queryClient } from "../lib/queryClient";
+import { signOut } from "../hooks/useAuth";
 
 export default function SettingsPrivacy() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { data: couple } = useCouple();
   const [share, setShare] = useState(true);
   const [toast, setToast] = useState("");
+  const [disconnecting, setDisconnecting] = useState(false);
 
   function showToast(msg: string) {
     setToast(msg);
     setTimeout(() => setToast(""), 1800);
+  }
+
+  async function handleDisconnect() {
+    const confirmed = window.confirm(
+      "Yakin ingin memutuskan koneksi dengan pasangan? Semua data bersama (tabungan, wishlist) akan tetap ada tapi kalian tidak lagi terhubung.",
+    );
+    if (!confirmed) return;
+
+    setDisconnecting(true);
+    try {
+      // Update status couple jadi 'disconnected'
+      const { error } = await supabase
+        .from("couples")
+        .update({ status: "disconnected" })
+        .eq("id", couple?.id);
+
+      if (error) throw error;
+
+      // Invalidate semua query
+      queryClient.clear();
+
+      // Logout dan redirect ke onboarding
+      await signOut();
+      navigate("/login");
+    } catch (err: any) {
+      showToast("Gagal memutuskan koneksi");
+      console.error(err);
+    } finally {
+      setDisconnecting(false);
+    }
   }
 
   return (
@@ -42,7 +79,7 @@ export default function SettingsPrivacy() {
               Email terdaftar
             </span>
             <span className="text-xs text-muted-foreground truncate max-w-[160px]">
-              {ME.email}
+              {user?.email}
             </span>
           </div>
         </div>
@@ -83,10 +120,15 @@ export default function SettingsPrivacy() {
           Bahaya
         </h2>
         <p className="text-[11px] text-muted-foreground mb-2 px-1">
-          Tindakan ini akan menghapus akses pasangan ke data kamu.
+          Tindakan ini akan menghapus koneksi dengan pasangan. Kamu perlu invite
+          ulang untuk terhubung kembali.
         </p>
-        <button className="w-full min-h-11 py-3 rounded-full border-2 border-rose-300 text-rose-500 font-semibold">
-          Putuskan koneksi pasangan
+        <button
+          onClick={handleDisconnect}
+          disabled={disconnecting || !couple}
+          className="w-full min-h-11 py-3 rounded-full border-2 border-rose-300 text-rose-500 font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {disconnecting ? "Memutuskan..." : "Putuskan koneksi pasangan"}
         </button>
       </section>
 
