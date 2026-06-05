@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500;600;700&family=Quicksand:wght@400;500;600;700&display=swap");
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: #FFF5F9;
+  color: #4A2040;
+  font-family: 'Quicksand', ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  max-width: 430px;
+  margin: 0 auto;
+}
+
+@layer utilities {
+  .font-script { font-family: 'Dancing Script', cursive; }
+
+  .bg-gradient-pink {
+    background-image: linear-gradient(135deg, #F472B6, #ec4899);
+  }
+  .bg-gradient-blush {
+    background-image: linear-gradient(160deg, #fff0f6, #fce7f3);
+  }
+
+  .shadow-pink { box-shadow: 0 10px 30px -10px rgba(244,114,182,0.35); }
+  .shadow-soft { box-shadow: 0 8px 24px -8px rgba(244,114,182,0.25); }
+  .shadow-gold { box-shadow: 0 0 24px rgba(251,191,36,0.4); }
+
+  .glass {
+    background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.6);
+  }
+  .glass-pink {
+    background: rgba(253,232,240,0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(244,114,182,0.2);
+  }
+  .gold-border {
+    border: 1px solid rgba(251,191,36,0.4);
+  }
+}
+
+@layer utilities {
+  .anim-float {
+    animation: float 4s ease-in-out infinite;
+  }
+  .anim-twinkle {
+    animation: twinkle 2.5s ease-in-out infinite;
+  }
+  .anim-shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Theme color variables */
+:root {
+  --color-primary: #F472B6;
+}
+
+.theme-pink { --color-primary: #F472B6; }
+.theme-rose { --color-primary: #FB7185; }
+.theme-blush { --color-primary: #F9A8D4; }
+.theme-purple { --color-primary: #C4B5FD; }
+.theme-gold { --color-primary: #FBBF24; }
+.theme-mint { --color-primary: #86EFAC; }
