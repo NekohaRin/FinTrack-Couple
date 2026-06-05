@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Link2, MapPin } from "lucide-react";
-import { useAddWishlistItem } from "../hooks/useWishlist";
+import {
+  useAddWishlistItem,
+  useUpdateWishlistItem,
+} from "../hooks/useWishlist";
 
 const CATEGORIES = [
   { key: "electronics", label: "Elektronik", emoji: "📱" },
@@ -24,13 +27,27 @@ const EMOJIS = [
   "🎁",
 ];
 
+type EditItem = {
+  id: string;
+  title?: string;
+  emoji?: string;
+  category?: string;
+  target_price?: number;
+  note?: string;
+  product_link?: string;
+  maps_link?: string;
+};
+
 export function AddWishlistSheet({
   open,
   onClose,
+  editItem,
 }: {
   open: boolean;
   onClose: () => void;
+  editItem?: EditItem;
 }) {
+  const isEdit = !!editItem?.id;
   const [emoji, setEmoji] = useState("🌴");
   const [cat, setCat] = useState("travel");
   const [title, setTitle] = useState("");
@@ -41,6 +58,29 @@ export function AddWishlistSheet({
   const [error, setError] = useState("");
 
   const addWishlist = useAddWishlistItem();
+  const updateWishlist = useUpdateWishlistItem();
+
+  // Isi form saat mode edit
+  useEffect(() => {
+    if (open && editItem) {
+      setEmoji(editItem.emoji || "🌴");
+      setCat(editItem.category || "travel");
+      setTitle(editItem.title || "");
+      setTargetPrice(String(editItem.target_price || ""));
+      setNote(editItem.note || "");
+      setProductLink(editItem.product_link || "");
+      setMapsLink(editItem.maps_link || "");
+    } else if (open && !editItem) {
+      setEmoji("🌴");
+      setCat("travel");
+      setTitle("");
+      setTargetPrice("");
+      setNote("");
+      setProductLink("");
+      setMapsLink("");
+    }
+    setError("");
+  }, [open, editItem]);
 
   async function handleSave() {
     if (!title.trim()) {
@@ -52,28 +92,30 @@ export function AddWishlistSheet({
       return;
     }
     setError("");
+
+    const payload = {
+      title: title.trim(),
+      emoji,
+      category: cat,
+      target_price: parseInt(targetPrice),
+      note: note.trim() || null,
+      product_link: productLink.trim() || null,
+      maps_link: mapsLink.trim() || null,
+    };
+
     try {
-      await addWishlist.mutateAsync({
-        title: title.trim(),
-        emoji,
-        category: cat,
-        target_price: parseInt(targetPrice),
-        note: note.trim() || null,
-        product_link: productLink.trim() || null,
-        maps_link: mapsLink.trim() || null,
-      });
-      setTitle("");
-      setTargetPrice("");
-      setNote("");
-      setProductLink("");
-      setMapsLink("");
-      setEmoji("🌴");
-      setCat("travel");
+      if (isEdit) {
+        await updateWishlist.mutateAsync({ id: editItem!.id, ...payload });
+      } else {
+        await addWishlist.mutateAsync(payload);
+      }
       onClose();
     } catch (e: any) {
       setError(e.message || "Gagal menyimpan impian");
     }
   }
+
+  const isPending = addWishlist.isPending || updateWishlist.isPending;
 
   if (!open) return null;
   return (
@@ -92,7 +134,9 @@ export function AddWishlistSheet({
         >
           <X size={16} />
         </button>
-        <h3 className="font-script text-3xl text-center">Tambah Impian ✨</h3>
+        <h3 className="font-script text-3xl text-center">
+          {isEdit ? "Edit Impian ✨" : "Tambah Impian ✨"}
+        </h3>
 
         <div className="mt-5">
           <p className="text-xs text-muted-foreground mb-2">Pilih emoji</p>
@@ -177,10 +221,14 @@ export function AddWishlistSheet({
 
         <button
           onClick={handleSave}
-          disabled={addWishlist.isPending}
+          disabled={isPending}
           className="mt-6 w-full py-3.5 rounded-full bg-gradient-pink text-white font-semibold shadow-pink disabled:opacity-50"
         >
-          {addWishlist.isPending ? "Menyimpan..." : "Simpan Impian 💫"}
+          {isPending
+            ? "Menyimpan..."
+            : isEdit
+              ? "Update Impian 💫"
+              : "Simpan Impian 💫"}
         </button>
       </div>
     </div>
