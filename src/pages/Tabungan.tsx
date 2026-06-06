@@ -1,72 +1,40 @@
 import { useState } from "react";
-import { Plus, Sparkles } from "lucide-react";
+import { Plus, Sparkles, Pencil } from "lucide-react";
 import { BottomNav } from "../components/BottomNav";
 import { AddSavingSheet } from "../components/AddSavingSheet";
-import { fmtIDR } from "../lib/formatCurrency";
+import { EditSavingGoalSheet } from "../components/EditSavingGoalSheet";
 import { useSavings, useSavingsSummary } from "../hooks/useSavings";
-import { useAuth } from "../hooks/useAuth";
 import { useCouple } from "../hooks/useCouple";
-import { useProfile } from "../hooks/useProfile";
+import { useAuth } from "../hooks/useAuth";
+import { AvatarPhoto } from "../components/AvatarPhoto";
+import { fmtIDR } from "../lib/formatCurrency";
+import { formatTxDate } from "../lib/formatDate";
 
 export default function Tabungan() {
   const [open, setOpen] = useState(false);
+  const [openGoal, setOpenGoal] = useState(false);
 
-  // Fetch data dari Supabase
   const { user } = useAuth();
   const { data: couple } = useCouple();
-  const { data: profile } = useProfile();
-  const { data: savings, isLoading: loadingSavings } = useSavings();
-  const { data: summary, isLoading: loadingSummary } = useSavingsSummary();
-
-  // Loading state
-  if (loadingSavings || loadingSummary) {
-    return (
-      <div className="min-h-screen pb-28 px-4 pt-6">
-        <div className="space-y-3">
-          <div className="glass rounded-3xl h-40 animate-pulse" />
-          <div className="grid grid-cols-2 gap-3">
-            <div className="glass rounded-2xl h-20 animate-pulse" />
-            <div className="glass rounded-2xl h-20 animate-pulse" />
-          </div>
-          <div className="glass rounded-2xl h-20 animate-pulse" />
-        </div>
-      </div>
-    );
-  }
+  const { data: savings, isLoading } = useSavings();
+  const { data: summary } = useSavingsSummary();
 
   const totalSaved = summary?.total || 0;
-  const SAVING_GOAL = 5000000; // TODO: Bisa dibuat dynamic dari settings
+  const SAVING_GOAL = parseFloat(String(couple?.saving_goal || 5000000));
   const pct = Math.min(100, Math.round((totalSaved / SAVING_GOAL) * 100));
-  console.log(
-    "totalSaved:",
-    totalSaved,
-    "SAVING_GOAL:",
-    SAVING_GOAL,
-    "pct:",
-    pct,
-  );
-  // Calculate kontribusi masing-masing
-  const myContrib =
-    savings
-      ?.filter((s) => s.added_by === user?.id)
-      .reduce((a, b) => a + parseFloat(String(b.amount)), 0) || 0;
 
-  const partnerContrib =
-    savings
-      ?.filter((s) => s.added_by !== user?.id)
-      .reduce((a, b) => a + parseFloat(String(b.amount)), 0) || 0;
+  const partnerProfile =
+    couple?.user1_id === user?.id ? couple?.user2 : couple?.user1;
+  const myProfile =
+    couple?.user1_id === user?.id ? couple?.user1 : couple?.user2;
 
-  // Get partner info
-  const partnerId =
-    couple?.user1_id === user?.id ? couple?.user2_id : couple?.user1_id;
-  const partnerName =
-    couple?.user1_id === user?.id
-      ? couple?.user2?.display_name || "Partner"
-      : couple?.user1?.display_name || "Partner";
+  const myTotal = (savings || [])
+    .filter((s) => s.added_by === user?.id)
+    .reduce((a, b) => a + parseFloat(b.amount), 0);
 
-  const myName = profile?.display_name || "Saya";
-  const myInitial = myName.charAt(0).toUpperCase();
-  const partnerInitial = partnerName.charAt(0).toUpperCase();
+  const partnerTotal = (savings || [])
+    .filter((s) => s.added_by !== user?.id)
+    .reduce((a, b) => a + parseFloat(b.amount), 0);
 
   return (
     <>
@@ -79,32 +47,56 @@ export default function Tabungan() {
         </header>
 
         {/* Main saving card */}
-        <div className="glass-pink gold-border rounded-3xl p-5 shadow-pink relative overflow-hidden">
+        <div className="glass-pink gold-border rounded-3xl p-5 shadow-pink relative overflow-visible">
           <Sparkles
             size={16}
             className="absolute top-3 right-3 text-yellow-400 anim-twinkle"
           />
-          <p className="text-s uppercase tracking-wider text-muted-foreground">
-            Total Tabungan
-          </p>
+
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">
+              Total Tabungan
+            </p>
+            <button
+              onClick={() => setOpenGoal(true)}
+              className="flex items-center gap-1 text-xs text-primary font-semibold glass px-2 py-1 rounded-full"
+            >
+              <Pencil size={10} /> Edit Target
+            </button>
+          </div>
+
           <p className="font-script text-5xl text-primary mt-1">
             {fmtIDR(totalSaved)}
           </p>
-          <div className="mt-3 h-2.5 rounded-full bg-white/60 overflow-hidden">
-            <div
-              className="h-full anim-shimmer rounded-full transition-all duration-700"
-              style={{ width: `${Math.max(pct, pct > 0 ? 3 : 0)}%` }}
-            />
+
+          {/* Progress bar */}
+          <div className="mt-3 relative">
+            <div className="h-2.5 rounded-full bg-white/60 overflow-visible">
+              <div
+                className="h-full anim-shimmer rounded-full transition-all duration-700 relative"
+                style={{ width: `${Math.max(pct, pct > 0 ? 3 : 0)}%` }}
+              >
+                {pct > 0 && (
+                  <span className="absolute -top-5 right-0 text-[10px] font-bold text-primary whitespace-nowrap">
+                    {pct}%
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
-            <span className="font-bold text-primary">{pct}%</span>
-          <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
+
+          <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
             <div className="flex -space-x-2">
-              <div className="h-8 w-8 rounded-full bg-white text-primary font-bold flex items-center justify-center ring-2 ring-yellow-400/70 text-xs">
-                {myInitial}
-              </div>
-              <div className="h-8 w-8 rounded-full bg-gradient-pink text-white font-bold flex items-center justify-center ring-2 ring-yellow-400/70 text-xs">
-                {partnerInitial}
-              </div>
+              <AvatarPhoto
+                src={myProfile?.avatar_url}
+                name={myProfile?.display_name || "Saya"}
+                size="sm"
+              />
+              <AvatarPhoto
+                src={partnerProfile?.avatar_url}
+                name={partnerProfile?.display_name || "Pasangan"}
+                size="sm"
+              />
             </div>
             <span>
               dari target{" "}
@@ -119,28 +111,32 @@ export default function Tabungan() {
         <div className="grid grid-cols-2 gap-3 mt-4">
           <div className="glass-pink rounded-2xl p-3 shadow-soft">
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full bg-white text-primary font-bold flex items-center justify-center text-xs ring-2 ring-yellow-400/50">
-                {myInitial}
-              </div>
-              <span className="text-xs font-semibold text-muted-foreground">
-                {myName}
+              <AvatarPhoto
+                src={myProfile?.avatar_url}
+                name={myProfile?.display_name || "Saya"}
+                size="sm"
+              />
+              <span className="text-xs font-semibold text-muted-foreground truncate">
+                {myProfile?.display_name || "Saya"}
               </span>
             </div>
             <p className="font-script text-xl mt-1 text-primary">
-              {fmtIDR(myContrib)}
+              {fmtIDR(myTotal)}
             </p>
           </div>
           <div className="glass rounded-2xl p-3 shadow-soft border border-purple-100">
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full bg-gradient-pink text-white font-bold flex items-center justify-center text-xs ring-2 ring-yellow-400/50">
-                {partnerInitial}
-              </div>
-              <span className="text-xs font-semibold text-muted-foreground">
-                {partnerName}
+              <AvatarPhoto
+                src={partnerProfile?.avatar_url}
+                name={partnerProfile?.display_name || "Pasangan"}
+                size="sm"
+              />
+              <span className="text-xs font-semibold text-muted-foreground truncate">
+                {partnerProfile?.display_name || "Pasangan"}
               </span>
             </div>
             <p className="font-script text-xl mt-1 text-primary">
-              {fmtIDR(partnerContrib)}
+              {fmtIDR(partnerTotal)}
             </p>
           </div>
         </div>
@@ -148,60 +144,57 @@ export default function Tabungan() {
         {/* Riwayat */}
         <h2 className="font-script text-2xl mt-6 mb-3">Riwayat Tabungan 📖</h2>
 
-        {!savings || savings.length === 0 ? (
-          <div className="glass rounded-3xl p-8 text-center">
-            <p className="text-4xl mb-2">🏦</p>
-            <p className="text-muted-foreground">Belum ada tabungan</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Tap tombol + untuk mulai nabung
-            </p>
-          </div>
-        ) : (
+        {isLoading && (
           <div className="space-y-2">
-            {savings.map((s) => {
-              const isMine = s.added_by === user?.id;
-              const who = isMine ? myName : partnerName;
-              const initial = isMine ? myInitial : partnerInitial;
-              const positive = parseFloat(String(s.amount)) > 0;
-              const amount = Math.abs(parseFloat(String(s.amount)));
-
-              return (
-                <div
-                  key={s.id}
-                  className="glass rounded-2xl p-3 flex items-center gap-3 shadow-soft"
-                >
-                  <div
-                    className={`h-10 w-10 rounded-full font-bold flex items-center justify-center text-sm ring-2 ring-yellow-400/50 ${
-                      isMine
-                        ? "bg-white text-primary"
-                        : "bg-gradient-pink text-white"
-                    }`}
-                  >
-                    {initial}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate">
-                      {s.note || "Tabungan"}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {who} •{" "}
-                      {new Date(s.date).toLocaleDateString("id-ID", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </p>
-                  </div>
-                  <span
-                    className={`text-sm font-bold ${positive ? "text-emerald-600" : "text-primary"}`}
-                  >
-                    {positive ? "+" : "−"} {fmtIDR(amount)}
-                  </span>
-                </div>
-              );
-            })}
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="glass rounded-2xl h-16 animate-pulse" />
+            ))}
           </div>
         )}
+
+        {!isLoading && (savings || []).length === 0 && (
+          <div className="glass rounded-3xl p-8 text-center">
+            <p className="text-4xl mb-2">💰</p>
+            <p className="text-muted-foreground text-sm">
+              Belum ada tabungan, yuk mulai menabung!
+            </p>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          {(savings || []).map((s) => {
+            const isMine = s.added_by === user?.id;
+            const who = isMine ? myProfile : partnerProfile;
+            const positive = parseFloat(s.amount) > 0;
+            return (
+              <div
+                key={s.id}
+                className="glass rounded-2xl p-3 flex items-center gap-3 shadow-soft"
+              >
+                <AvatarPhoto
+                  src={who?.avatar_url}
+                  name={who?.display_name || (isMine ? "Saya" : "Pasangan")}
+                  size="sm"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate">
+                    {s.note || "Tabungan"}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {who?.display_name || (isMine ? "Saya" : "Pasangan")} •{" "}
+                    {formatTxDate(s.date)}
+                  </p>
+                </div>
+                <span
+                  className={`text-sm font-bold ${positive ? "text-emerald-600" : "text-rose-400"}`}
+                >
+                  {positive ? "+" : "−"}{" "}
+                  {fmtIDR(Math.abs(parseFloat(s.amount)))}
+                </span>
+              </div>
+            );
+          })}
+        </div>
 
         {/* FAB */}
         <button
@@ -213,6 +206,12 @@ export default function Tabungan() {
       </div>
       <BottomNav />
       <AddSavingSheet open={open} onClose={() => setOpen(false)} />
+      <EditSavingGoalSheet
+        open={openGoal}
+        onClose={() => setOpenGoal(false)}
+        coupleId={couple?.id || ""}
+        currentGoal={SAVING_GOAL}
+      />
     </>
   );
 }
