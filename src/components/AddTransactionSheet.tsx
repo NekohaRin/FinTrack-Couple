@@ -2,8 +2,8 @@ import { useState } from "react";
 import { X, Pencil, Calendar, WifiOff } from "lucide-react";
 import { useAddTransaction } from "../hooks/useTransactions";
 import { useAuth } from "../hooks/useAuth";
-import { queueTransaction, getPendingCount } from "../lib/offlineQueue";
-import { CATEGORIES } from "../lib/mock";
+import { useCategories } from "../hooks/useCategories";
+import { queueTransaction } from "../lib/offlineQueue";
 
 export function AddTransactionSheet({
   open,
@@ -16,12 +16,14 @@ export function AddTransactionSheet({
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [cat, setCat] = useState("food");
+  const [cat, setCat] = useState("");
   const [error, setError] = useState("");
   const [savedOffline, setSavedOffline] = useState(false);
 
   const addTransaction = useAddTransaction();
   const { user } = useAuth();
+  // Ambil semua kategori (personal & shared) tanpa filter scope
+  const { data: dbCategories = [], isLoading: catLoading } = useCategories(null);
 
   async function handleSave() {
     if (!amount || parseInt(amount) === 0) {
@@ -32,11 +34,15 @@ export function AddTransactionSheet({
 
     const finalAmount =
       type === "expense" ? -parseInt(amount) : parseInt(amount);
+
+    // Cari category_id dari kategori DB berdasarkan pilihan user
+    const selectedCategory = dbCategories.find((c: any) => c.id === cat) || null;
+
     const txData = {
       amount: finalAmount,
       note: note.trim() || null,
       date,
-      category_id: null,
+      category_id: selectedCategory?.id ?? null,
       type,
     };
 
@@ -66,7 +72,7 @@ export function AddTransactionSheet({
     setAmount("");
     setNote("");
     setDate(new Date().toISOString().slice(0, 10));
-    setCat("food");
+    setCat("");
     setType("expense");
   }
 
@@ -140,18 +146,26 @@ export function AddTransactionSheet({
               <div className="text-xs font-semibold mb-2 text-muted-foreground">
                 Kategori
               </div>
-              <div className="grid grid-cols-4 gap-2">
-                {CATEGORIES.map((c) => (
-                  <button
-                    key={c.key}
-                    onClick={() => setCat(c.key)}
-                    className={`rounded-2xl py-2.5 flex flex-col items-center gap-0.5 text-[11px] font-medium transition ${cat === c.key ? "bg-gradient-pink text-white shadow-pink" : "glass text-muted-foreground"}`}
-                  >
-                    <span className="text-lg">{c.emoji}</span>
-                    {c.label}
-                  </button>
-                ))}
-              </div>
+              {catLoading ? (
+                <p className="text-xs text-muted-foreground text-center py-2">Memuat kategori...</p>
+              ) : dbCategories.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-2">Belum ada kategori. Tambah di pengaturan.</p>
+              ) : (
+                <div className="grid grid-cols-4 gap-2">
+                  {dbCategories.map((c: any) => (
+                    <button
+                      key={c.id}
+                      onClick={() => setCat(c.id)}
+                      className={`rounded-2xl py-2.5 flex flex-col items-center gap-0.5 text-[11px] font-medium transition ${
+                        cat === c.id ? "bg-gradient-pink text-white shadow-pink" : "glass text-muted-foreground"
+                      }`}
+                    >
+                      <span className="text-lg">{c.icon}</span>
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="mt-4 space-y-2">

@@ -56,9 +56,15 @@ body {
     animation: twinkle 2.5s ease-in-out infinite;
   }
   .anim-shimmer {
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    background-size: 200% 100%;
-    animation: shimmer 2s infinite;
+  background: linear-gradient(
+    90deg,
+    #F472B6 0%,
+    #f9a8d4 40%,
+    #F472B6 60%,
+    #F472B6 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
   }
 }
 

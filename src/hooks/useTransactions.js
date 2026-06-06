@@ -183,7 +183,7 @@ export function useDashboardSummary() {
       
       const expense = data
         .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + parseFloat(t.amount), 0)
+        .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0)
       
       const balance = income - expense
       

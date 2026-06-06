@@ -37,9 +37,19 @@ export function useRealtimeNotifications() {
         (payload) => {
           const tx = payload.new
           const isIncome = parseFloat(tx.amount) > 0
+          // In-app toast
           triggerNotif({
             emoji: isIncome ? '💚' : '🌸',
             message: `${partnerName} mencatat ${isIncome ? 'pemasukan' : 'pengeluaran'} baru`,
+          })
+            // Push notification ke device
+          await supabase.functions.invoke('send-push-notification', {
+            body: {
+              userId: user.id,
+              title: 'FinTrack 💕',
+              body: `${partnerName} mencatat ${isIncome ? 'pemasukan' : 'pengeluaran'} baru`,
+              url: '/',
+            },
           })
           // Refresh data partner
           queryClient.invalidateQueries({ queryKey: ['partner-transactions'] })

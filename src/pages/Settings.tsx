@@ -53,10 +53,17 @@ export default function Settings() {
   const partnerName = partnerProfile?.display_name || "Pasangan";
   const partnerAvatar = partnerProfile?.avatar_url || undefined;
 
-  function handleSwatch(i: number) {
+  // function handleSwatch(i: number) {
+  //   setActiveSwatch(i);
+  //   document.body.classList.remove(...swatches.map((s) => s.cls));
+  //   document.body.classList.add(swatches[i].cls);
+  // }
+  async function handleSwatch(i: number) {
     setActiveSwatch(i);
+    const selectedCls = swatches[i].cls; // 'theme-pink', bukan '#F472B6'
     document.body.classList.remove(...swatches.map((s) => s.cls));
-    document.body.classList.add(swatches[i].cls);
+    document.body.classList.add(selectedCls);
+    await updateProfile.mutateAsync({ theme_color: selectedCls });
   }
 
   async function handleNameBlur() {
@@ -74,14 +81,16 @@ export default function Settings() {
 
   async function handleCropDone(file: File) {
     setCropSrc(null);
-    console.log('🔄 Memulai upload avatar...');
+    console.log("🔄 Memulai upload avatar...");
     try {
       await uploadAvatar.mutateAsync(file);
-      console.log('✅ Avatar berhasil diupload!');
-      alert('✅ Foto profil berhasil diupdate!');
+      console.log("✅ Avatar berhasil diupload!");
+      alert("✅ Foto profil berhasil diupdate!");
     } catch (err: any) {
       console.error("❌ Gagal upload foto:", err);
-      alert(`❌ Gagal upload foto: ${err.message || 'Unknown error'}\n\nCek console (F12) untuk detail.`);
+      alert(
+        `❌ Gagal upload foto: ${err.message || "Unknown error"}\n\nCek console (F12) untuk detail.`,
+      );
     }
   }
 
