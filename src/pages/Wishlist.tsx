@@ -5,6 +5,7 @@ import { BottomNav } from "../components/BottomNav";
 import { AddWishlistSheet } from "../components/AddWishlistSheet";
 import { AddCategorySheet } from "../components/AddCategorySheet";
 import { useWishlist } from "../hooks/useWishlist";
+import { useCouple } from "../hooks/useCouple";
 import { fmtIDR } from "../lib/formatCurrency";
 
 const DEFAULT_CATEGORIES = [
@@ -20,15 +21,25 @@ export default function Wishlist() {
   const [openCat, setOpenCat] = useState(false);
 
   const { data: wishes, isLoading } = useWishlist();
+  const { data: couple } = useCouple();
+
+  // Gabungkan kategori default + custom dari couple
+  const customCategories =
+    (couple?.wishlist_categories as {
+      key: string;
+      label: string;
+      emoji: string;
+    }[]) || [];
+  const allCategories = [...DEFAULT_CATEGORIES, ...customCategories];
 
   const filtered =
     tab === "all"
       ? wishes || []
       : (wishes || []).filter((w) => w.category === tab);
   const catLabel = (key: string) =>
-    DEFAULT_CATEGORIES.find((c) => c.key === key)?.label ?? key;
+    allCategories.find((c) => c.key === key)?.label ?? key;
   const catEmoji = (key: string) =>
-    DEFAULT_CATEGORIES.find((c) => c.key === key)?.emoji ?? "✨";
+    allCategories.find((c) => c.key === key)?.emoji ?? "✨";
 
   return (
     <>
@@ -48,7 +59,7 @@ export default function Wishlist() {
           >
             Semua
           </button>
-          {DEFAULT_CATEGORIES.map((c) => (
+          {allCategories.map((c) => (
             <button
               key={c.key}
               onClick={() => setTab(c.key)}
@@ -85,51 +96,48 @@ export default function Wishlist() {
         )}
 
         {/* List */}
-        {!isLoading && (
-          <div className="space-y-2.5">
-            {filtered.map((w) => {
-              const saved = parseFloat(String(w.saved_amount || 0));
-              const target = parseFloat(String(w.target_price || 1));
-              const pct = Math.min(100, Math.round((saved / target) * 100));
-              return (
-                <Link
-                  key={w.id}
-                  to={`/wishlist/${w.id}`}
-                  className="block glass rounded-2xl p-3 shadow-soft active:scale-[0.99] transition"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="h-14 w-14 shrink-0 rounded-full bg-pink-50 gold-border flex items-center justify-center text-2xl">
-                      {w.emoji || "✨"}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-sm truncate">
-                        {w.title}
-                      </h3>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-primary font-semibold">
-                        {catEmoji(w.category)} {catLabel(w.category)}
-                      </span>
-                      {w.note && (
-                        <p className="text-[11px] text-muted-foreground truncate mt-0.5">
-                          {w.note}
-                        </p>
-                      )}
-                      <div className="mt-1.5 h-1.5 rounded-full bg-secondary overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-pink"
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                      <p className="text-[10px] text-muted-foreground mt-1">
-                        {fmtIDR(saved)} / {fmtIDR(target)}
-                      </p>
-                    </div>
-                    <ChevronRight size={18} className="text-primary shrink-0" />
+        {!isLoading &&
+          filtered.map((w) => {
+            const saved = parseFloat(String(w.saved_amount || 0));
+            const target = parseFloat(String(w.target_price || 1));
+            const pct = Math.min(100, Math.round((saved / target) * 100));
+            return (
+              <Link
+                key={w.id}
+                to={`/wishlist/${w.id}`}
+                className="block glass rounded-2xl p-3 shadow-soft active:scale-[0.99] transition mb-2.5"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-14 w-14 shrink-0 rounded-full bg-pink-50 gold-border flex items-center justify-center text-2xl">
+                    {w.emoji || "✨"}
                   </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm truncate">
+                      {w.title}
+                    </h3>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-primary font-semibold">
+                      {catEmoji(w.category)} {catLabel(w.category)}
+                    </span>
+                    {w.note && (
+                      <p className="text-[11px] text-muted-foreground truncate mt-0.5">
+                        {w.note}
+                      </p>
+                    )}
+                    <div className="mt-1.5 h-1.5 rounded-full bg-secondary overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-pink"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {fmtIDR(saved)} / {fmtIDR(target)}
+                    </p>
+                  </div>
+                  <ChevronRight size={18} className="text-primary shrink-0" />
+                </div>
+              </Link>
+            );
+          })}
 
         <button
           onClick={() => setOpenAdd(true)}
@@ -138,9 +146,15 @@ export default function Wishlist() {
           <Plus size={26} strokeWidth={2.6} />
         </button>
       </div>
+
       <BottomNav />
       <AddWishlistSheet open={openAdd} onClose={() => setOpenAdd(false)} />
-      <AddCategorySheet open={openCat} onClose={() => setOpenCat(false)} />
+      <AddCategorySheet
+        open={openCat}
+        onClose={() => setOpenCat(false)}
+        coupleId={couple?.id || ""}
+        existingCategories={customCategories}
+      />
     </>
   );
 }

@@ -28,9 +28,9 @@ export function AddSavingSheet({
     try {
       const finalAmount =
         type === "withdraw" ? -parseInt(amount) : parseInt(amount);
-      await addSaving.mutateAsync({ 
-        amount: finalAmount, 
-        note, 
+      await addSaving.mutateAsync({
+        amount: finalAmount,
+        note,
         date,
         wishlist_item_id: wishlistItemId || null,
       });

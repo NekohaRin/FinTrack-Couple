@@ -4,8 +4,9 @@ import {
   useAddWishlistItem,
   useUpdateWishlistItem,
 } from "../hooks/useWishlist";
+import { useCouple } from "../hooks/useCouple";
 
-const CATEGORIES = [
+const DEFAULT_CATEGORIES = [
   { key: "electronics", label: "Elektronik", emoji: "📱" },
   { key: "travel", label: "Liburan", emoji: "✈️" },
   { key: "home", label: "Rumah", emoji: "🏠" },
@@ -48,6 +49,17 @@ export function AddWishlistSheet({
   editItem?: EditItem;
 }) {
   const isEdit = !!editItem?.id;
+  const { data: couple } = useCouple();
+
+  // Gabungkan kategori default + custom
+  const customCategories =
+    (couple?.wishlist_categories as {
+      key: string;
+      label: string;
+      emoji: string;
+    }[]) || [];
+  const allCategories = [...DEFAULT_CATEGORIES, ...customCategories];
+
   const [emoji, setEmoji] = useState("🌴");
   const [cat, setCat] = useState("travel");
   const [title, setTitle] = useState("");
@@ -60,7 +72,6 @@ export function AddWishlistSheet({
   const addWishlist = useAddWishlistItem();
   const updateWishlist = useUpdateWishlistItem();
 
-  // Isi form saat mode edit
   useEffect(() => {
     if (open && editItem) {
       setEmoji(editItem.emoji || "🌴");
@@ -161,8 +172,9 @@ export function AddWishlistSheet({
             className="w-full glass rounded-2xl px-4 py-3 outline-none text-sm focus:ring-2 focus:ring-primary placeholder:text-muted-foreground"
           />
 
+          {/* Kategori — sekarang include custom */}
           <div className="flex gap-2 overflow-x-auto pb-1">
-            {CATEGORIES.map((c) => (
+            {allCategories.map((c) => (
               <button
                 key={c.key}
                 onClick={() => setCat(c.key)}
