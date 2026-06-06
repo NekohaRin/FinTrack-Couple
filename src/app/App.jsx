@@ -3,6 +3,7 @@ import { QueryProvider } from './QueryProvider'
 import { Router } from './Router'
 import { supabase } from '../lib/supabase'
 import { NotificationToast } from '../components/NotificationToast'
+import { FloatingDecor, Blobs } from '../components/Decor'
 import { useRealtimeNotifications } from '../hooks/useRealtimeNotifications'
 import { useOfflineSync } from '../hooks/useOfflineSync'
 
@@ -27,11 +28,9 @@ function ThemeApplier() {
 
 function OfflineBanner() {
   const { isOnline, pendingCount, syncing } = useOfflineSync()
-
   if (isOnline && pendingCount === 0) return null
-
   return (
-    <div className={`fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-[199] px-4 py-2 text-center text-xs font-semibold transition-all ${
+    <div className={`fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-[199] px-4 py-2 text-center text-xs font-semibold ${
       isOnline ? 'bg-emerald-400 text-white' : 'bg-amber-400 text-white'
     }`}>
       {!isOnline && '📵 Offline — transaksi akan disimpan lokal'}
@@ -49,6 +48,9 @@ function App() {
   return (
     <QueryProvider>
       <ThemeApplier />
+      {/* Background global — muncul di semua halaman */}
+      <Blobs />
+      <FloatingDecor />
       <NotificationToast />
       <OfflineBanner />
       <AppContent />
