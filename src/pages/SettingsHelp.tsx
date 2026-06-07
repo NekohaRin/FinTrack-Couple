@@ -72,9 +72,12 @@ export default function SettingsHelp() {
 
       <div className="mt-8 text-center">
         <p className="text-sm text-muted-foreground">Butuh bantuan lebih?</p>
-        <button className="mt-3 w-full min-h-11 py-3 rounded-full bg-gradient-pink text-white font-semibold shadow-pink">
+        <a
+          href="mailto:jakiinajah@gmail.com?subject=Bantuan%20FinTrack&body=Halo%2C%20saya%20butuh%20bantuan%20mengenai..."
+          className="mt-3 w-full min-h-11 py-3 rounded-full bg-gradient-pink text-white font-semibold shadow-pink flex items-center justify-center gap-2"
+        >
           Hubungi Kami 💌
-        </button>
+        </a>
       </div>
     </div>
   );
