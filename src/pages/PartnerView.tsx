@@ -23,7 +23,7 @@ export default function PartnerView() {
   const expense = (txs || [])
     .filter((t) => parseFloat(t.amount) < 0)
     .reduce((a, b) => a + parseFloat(b.amount), 0);
-
+  const balance = income - Math.abs(expense);
   return (
     <>
       <div className="min-h-screen pb-28 px-4 pt-6 relative overflow-hidden">
@@ -48,22 +48,38 @@ export default function PartnerView() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mt-6">
-          <div className="glass rounded-2xl p-3 border border-emerald-200/60">
-            <div className="flex items-center justify-between text-emerald-600">
-              <span className="text-xs font-semibold">Pemasukan</span>
-              <TrendingUp size={14} />
-            </div>
-            <p className="font-script text-xl mt-1">{fmtIDR(income)}</p>
-          </div>
-          <div className="glass rounded-2xl p-3 border border-rose-200/60">
-            <div className="flex items-center justify-between text-rose-400">
-              <span className="text-xs font-semibold">Pengeluaran</span>
-              <TrendingDown size={14} />
-            </div>
-            <p className="font-script text-xl mt-1">
-              {fmtIDR(Math.abs(expense))}
+        <div className="mt-6">
+          {/* Balance card utama */}
+          <div className="relative rounded-3xl p-5 bg-gradient-pink text-white shadow-pink overflow-hidden mb-3">
+            <p className="text-xs uppercase tracking-widest opacity-90">
+              Saldo {partnerName}
             </p>
+            <p className="font-script text-5xl mt-1 drop-shadow-sm">
+              {fmtIDR(balance)}
+            </p>
+            <p className="text-xs mt-1 opacity-90">
+              {(txs || []).length} transaksi bulan ini 💕
+            </p>
+          </div>
+
+          {/* Mini cards */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="glass rounded-2xl p-3 border border-emerald-200/60">
+              <div className="flex items-center justify-between text-emerald-600">
+                <span className="text-xs font-semibold">Pemasukan</span>
+                <TrendingUp size={14} />
+              </div>
+              <p className="font-script text-xl mt-1">{fmtIDR(income)}</p>
+            </div>
+            <div className="glass rounded-2xl p-3 border border-rose-200/60">
+              <div className="flex items-center justify-between text-rose-400">
+                <span className="text-xs font-semibold">Pengeluaran</span>
+                <TrendingDown size={14} />
+              </div>
+              <p className="font-script text-xl mt-1">
+                {fmtIDR(Math.abs(expense))}
+              </p>
+            </div>
           </div>
         </div>
 
